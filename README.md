@@ -1,6 +1,6 @@
 # Google Kubernetes Engine Tutorials
 
-A comprehensive collection of hands-on tutorials for mastering Google Kubernetes Engine (GKE).
+A collection of tutorials for mastering Google Kubernetes Engine (GKE).
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ A comprehensive collection of hands-on tutorials for mastering Google Kubernetes
 
 Learn how to create and configure a GKE cluster in Autopilot mode, Google's fully managed Kubernetes experience.
 
-**Interactive Tutorial:** [Step-by-step Guide](https://nbahador.github.io/Google_Kubernetes_Engine_Tutorials/assets/Create_a_cluster_in_GKE_Autopilot_mode_infographic.html)
+**Intuitive Explanation:** [Step-by-step Guide](https://nbahador.github.io/Google_Kubernetes_Engine_Tutorials/assets/Create_a_cluster_in_GKE_Autopilot_mode_infographic.html)
 
 [⬆️ Back to Table of Contents](#table-of-contents)
 
