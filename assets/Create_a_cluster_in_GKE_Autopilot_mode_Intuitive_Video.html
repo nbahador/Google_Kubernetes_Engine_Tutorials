@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GKE Autopilot Cluster Creation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        .main-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .step-info {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 80%;
+            z-index: 10;
+        }
+
+        .step-info h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .step-info p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .animation-stage {
+            width: 90%;
+            height: 60%;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scene.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Step 1: Car Naming */
+        .car {
+            width: 150px;
+            height: 70px;
+            background: #e74c3c;
+            border-radius: 15px 15px 8px 8px;
+            position: relative;
+            transform: translateX(-400px);
+            transition: all 2s ease;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .car::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 20px;
+            width: 22px;
+            height: 22px;
+            background: #2c3e50;
+            border-radius: 50%;
+            box-shadow: 85px 0 #2c3e50;
+        }
+
+        .car::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 25px;
+            width: 35px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            box-shadow: 50px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .car-window {
+            position: absolute;
+            top: 10px;
+            left: 70px;
+            width: 40px;
+            height: 25px;
+            background: rgba(52, 152, 219, 0.7);
+            border-radius: 4px;
+            transform: perspective(300px) rotateY(-10deg);
+        }
+
+        .car-name {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 1s ease 0.5s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .car.named {
+            transform: translateX(0);
+        }
+
+        .car.named .car-name {
+            opacity: 1;
+        }
+
+        /* Step 2: Region/Warehouses */
+        .warehouses-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 80%;
+            position: relative;
+        }
+
+        .warehouse {
+            width: 180px;
+            height: 120px;
+            background: #34495e;
+            position: relative;
+            border-radius: 8px;
+            opacity: 0;
+            transform: translateY(50px) scale(0.5);
+            transition: all 1s ease;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+        }
+
+        .warehouse::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 90px solid transparent;
+            border-right: 90px solid transparent;
+            border-bottom: 30px solid #2c3e50;
+        }
+
+        .warehouse::after {
+            content: '';
+            position: absolute;
+            top: 35px;
+            left: 25px;
+            width: 35px;
+            height: 50px;
+            background: #f39c12;
+            border-radius: 4px;
+            box-shadow: 60px 0 #f39c12, 100px 0 #f39c12;
+            transform: perspective(200px) rotateY(-5deg);
+        }
+
+        .warehouse-door {
+            position: absolute;
+            bottom: 0;
+            left: 65px;
+            width: 50px;
+            height: 70px;
+            background: #7f8c8d;
+            border-radius: 4px 4px 0 0;
+            transform: perspective(200px) rotateY(-5deg);
+        }
+
+        .warehouse.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .region-label {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .delivery-truck {
+            width: 100px;
+            height: 50px;
+            background: #f39c12;
+            position: absolute;
+            bottom: 200px;
+            left: 10%;
+            border-radius: 8px;
+            transform: translateX(0);
+            transition: all 3s ease;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .delivery-truck::before {
+            content: '📦';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            text-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .delivery-truck::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 15px;
+            width: 18px;
+            height: 18px;
+            background: #2c3e50;
+            border-radius: 50%;
+            box-shadow: 60px 0 #2c3e50;
+        }
+
+        .delivery-truck.moving {
+            transform: translateX(70vw);
+        }
+
+        /* Step 3: Car Tiers */
+        .car-comparison {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 80%;
+        }
+
+        .car-tier {
+            text-align: center;
+            position: relative;
+        }
+
+        .car-standard {
+            width: 140px;
+            height: 70px;
+            background: linear-gradient(to bottom, #95a5a6, #7f8c8d);
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transform: perspective(500px) rotateY(-5deg);
+        }
+
+        .car-standard::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 20px;
+            width: 20px;
+            height: 20px;
+            background: #2c3e50;
+            border-radius: 50%;
+            box-shadow: 85px 0 #2c3e50;
+        }
+
+        .car-standard::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 25px;
+            width: 35px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            box-shadow: 50px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .car-enterprise {
+            width: 140px;
+            height: 70px;
+            background: linear-gradient(45deg, #e67e22, #f39c12);
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(230, 126, 34, 0.8);
+            transform: perspective(500px) rotateY(5deg);
+        }
+
+        .car-enterprise::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 20px;
+            width: 20px;
+            height: 20px;
+            background: #2c3e50;
+            border-radius: 50%;
+            box-shadow: 85px 0 #2c3e50;
+        }
+
+        .car-enterprise::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 25px;
+            width: 35px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            box-shadow: 50px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .car-enterprise::after {
+            content: '✨';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            animation: sparkle 1.5s infinite;
+        }
+
+        .tier-label {
+            margin-top: 20px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.3); }
+        }
+
+        /* Step 4: Autopilot Taxi */
+        .taxi-scene {
+            width: 80%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .taxi {
+            width: 120px;
+            height: 60px;
+            background: #f1c40f;
+            border-radius: 10px;
+            position: relative;
+            transform: translateX(-300px);
+            transition: all 3s ease;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .taxi::before {
+            content: 'TAXI';
+            position: absolute;
+            top: 15px;
+            left: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .taxi::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 20px;
+            width: 18px;
+            height: 18px;
+            background: #333;
+            border-radius: 50%;
+            box-shadow: 70px 0 #333;
+        }
+
+        .taxi-window {
+            position: absolute;
+            top: 12px;
+            left: 70px;
+            width: 30px;
+            height: 20px;
+            background: rgba(52, 152, 219, 0.7);
+            border-radius: 3px;
+        }
+
+        .taxi.autopilot {
+            transform: translateX(300px);
+        }
+
+        .autopilot-indicator {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 1s ease 1s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .taxi.autopilot .autopilot-indicator {
+            opacity: 1;
+        }
+
+        /* Step 5: Networking - 3D Houses and Roads */
+        .network-scene {
+            position: relative;
+            width: 80%;
+            height: 60%;
+        }
+
+        .house {
+            width: 80px;
+            height: 80px;
+            background: #3498db;
+            position: absolute;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transform-style: preserve-3d;
+            transform: perspective(500px) rotateX(5deg) rotateY(5deg);
+        }
+
+        .house::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-bottom: 25px solid #2980b9;
+        }
+
+        .house::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 25px;
+            width: 20px;
+            height: 30px;
+            background: #f39c12;
+            border-radius: 3px;
+            transform: perspective(200px) rotateY(-5deg);
+        }
+
+        .house-window {
+            position: absolute;
+            top: 25px;
+            right: 15px;
+            width: 20px;
+            height: 20px;
+            background: #f1c40f;
+            border-radius: 2px;
+            transform: perspective(200px) rotateY(5deg);
+        }
+
+        .house1 { top: 50px; left: 100px; }
+        .house2 { top: 50px; right: 100px; }
+        .house3 { bottom: 50px; left: 100px; }
+        .house4 { bottom: 50px; right: 100px; }
+
+        .road {
+            position: absolute;
+            background: #7f8c8d;
+            opacity: 0;
+            transition: all 1.5s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .road.show {
+            opacity: 1;
+        }
+
+        .road-h1 { 
+            width: calc(100% - 220px); 
+            height: 10px; 
+            top: 85px; 
+            left: 160px; 
+            transform: perspective(100px) rotateX(30deg);
+        }
+        .road-v1 { 
+            width: 10px; 
+            height: calc(100% - 140px); 
+            top: 85px; 
+            left: 130px; 
+            transform: perspective(100px) rotateY(30deg);
+        }
+        .road-v2 { 
+            width: 10px; 
+            height: calc(100% - 140px); 
+            top: 85px; 
+            right: 130px; 
+            transform: perspective(100px) rotateY(-30deg);
+        }
+        .road-h2 { 
+            width: calc(100% - 220px); 
+            height: 10px; 
+            bottom: 85px; 
+            left: 160px; 
+            transform: perspective(100px) rotateX(-30deg);
+        }
+
+        /* Step 6: Security */
+        .security-scene {
+            text-align: center;
+        }
+
+        .house-secure {
+            width: 140px;
+            height: 110px;
+            background: #27ae60;
+            position: relative;
+            border-radius: 12px;
+            margin: 0 auto;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            transform: perspective(500px) rotateX(5deg);
+        }
+
+        .house-secure::before {
+            content: '';
+            position: absolute;
+            top: -35px;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 70px solid transparent;
+            border-right: 70px solid transparent;
+            border-bottom: 35px solid #229954;
+        }
+
+        .house-secure::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 40px;
+            width: 30px;
+            height: 45px;
+            background: #7f8c8d;
+            border-radius: 4px;
+            transform: perspective(200px) rotateY(-5deg);
+        }
+
+        .secure-window {
+            position: absolute;
+            top: 30px;
+            right: 25px;
+            width: 25px;
+            height: 25px;
+            background: #f1c40f;
+            border-radius: 3px;
+            transform: perspective(200px) rotateY(5deg);
+        }
+
+        .lock {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            opacity: 0;
+            transition: all 1s ease;
+            animation: lockGlow 2s infinite;
+            text-shadow: 0 5px 15px rgba(255, 215, 0, 0.7);
+        }
+
+        .lock.show {
+            opacity: 1;
+        }
+
+        @keyframes lockGlow {
+            0%, 100% { text-shadow: 0 0 10px #ffd700; }
+            50% { text-shadow: 0 0 20px #ffd700, 0 0 30px #ffd700; }
+        }
+
+        /* Step 7: Monitoring */
+        .monitoring-scene {
+            text-align: center;
+        }
+
+        .monitor-house {
+            width: 160px;
+            height: 130px;
+            background: #2980b9;
+            position: relative;
+            border-radius: 12px;
+            margin: 0 auto;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            transform: perspective(500px) rotateX(5deg);
+        }
+
+        .monitor-house::before {
+            content: '';
+            position: absolute;
+            top: -35px;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 80px solid transparent;
+            border-right: 80px solid transparent;
+            border-bottom: 35px solid #1f618d;
+        }
+
+        .monitor-house::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 45px;
+            width: 35px;
+            height: 50px;
+            background: #7f8c8d;
+            border-radius: 4px;
+            transform: perspective(200px) rotateY(-5deg);
+        }
+
+        .camera {
+            position: absolute;
+            top: -30px;
+            right: 20px;
+            font-size: 30px;
+            animation: cameraRotate 3s infinite;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .camera-stand {
+            position: absolute;
+            top: 5px;
+            right: 32px;
+            width: 6px;
+            height: 25px;
+            background: #7f8c8d;
+            border-radius: 3px;
+        }
+
+        .thermostat {
+            position: absolute;
+            bottom: -40px;
+            left: 25px;
+            font-size: 25px;
+            animation: thermostatPulse 2s infinite;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes cameraRotate {
+            0%, 100% { transform: rotate(-20deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        @keyframes thermostatPulse {
+            0%, 100% { transform: scale(1); color: #3498db; text-shadow: 0 0 10px #3498db; }
+            50% { transform: scale(1.3); color: #e74c3c; text-shadow: 0 0 20px #e74c3c; }
+        }
+
+        /* Step 8: Fleet Management */
+        .fleet-scene {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .tv-row {
+            display: flex;
+            gap: 80px;
+        }
+
+        .tv {
+            width: 90px;
+            height: 60px;
+            background: #2c3e50;
+            border-radius: 8px;
+            position: relative;
+            border: 3px solid #34495e;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: perspective(500px) rotateY(-5deg);
+        }
+
+        .tv::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: #1abc9c;
+            border-radius: 3px;
+            animation: tvFlicker 2s infinite;
+        }
+
+        .tv::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            background: #34495e;
+            border-radius: 3px;
+        }
+
+        @keyframes tvFlicker {
+            0%, 100% { background: #1abc9c; }
+            25% { background: #e74c3c; }
+            50% { background: #f39c12; }
+            75% { background: #9b59b6; }
+        }
+
+        .remote {
+            width: 60px;
+            height: 120px;
+            background: #34495e;
+            border-radius: 12px;
+            position: relative;
+            border: 2px solid #2c3e50;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: perspective(500px) rotateY(5deg);
+        }
+
+        .remote::before {
+            content: '📺';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+        }
+
+        .remote::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 50px;
+            background: #2c3e50;
+            border-radius: 5px;
+            border: 1px solid #1a252f;
+        }
+
+        .signal-waves {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: all 1s ease;
+        }
+
+        .signal-waves.show {
+            opacity: 1;
+        }
+
+        .wave {
+            position: absolute;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: waveExpand 2s infinite;
+        }
+
+        .wave:nth-child(1) { width: 50px; height: 50px; margin: -25px; animation-delay: 0s; }
+        .wave:nth-child(2) { width: 100px; height: 100px; margin: -50px; animation-delay: 0.5s; }
+        .wave:nth-child(3) { width: 150px; height: 150px; margin: -75px; animation-delay: 1s; }
+
+        @keyframes waveExpand {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        /* Step 9: Shopping Cart Review */
+        .review-scene {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 100px;
+        }
+
+        .cart {
+            width: 120px;
+            height: 90px;
+            background: #e74c3c;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: perspective(500px) rotateY(-5deg);
+        }
+
+        .cart::before {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 20px;
+            width: 15px;
+            height: 15px;
+            background: #2c3e50;
+            border-radius: 50%;
+            box-shadow: 70px 0 #2c3e50;
+        }
+
+        .cart-handle {
+            position: absolute;
+            top: -15px;
+            left: 70px;
+            width: 40px;
+            height: 10px;
+            background: #e74c3c;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .cart-items {
+            position: absolute;
+            top: -30px;
+            left: 20px;
+            right: 20px;
+            height: 25px;
+            background: #f39c12;
+            border-radius: 5px;
+            opacity: 0;
+            transition: all 1s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .cart-items::before {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: 15px;
+            right: 15px;
+            height: 18px;
+            background: #27ae60;
+            border-radius: 3px;
+        }
+
+        .cart-items.show {
+            opacity: 1;
+        }
+
+        .checkmark {
+            font-size: 80px;
+            color: #27ae60;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 1s ease;
+            animation: checkBounce 0.6s ease;
+            text-shadow: 0 5px 15px rgba(39, 174, 96, 0.7);
+        }
+
+        .checkmark.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        @keyframes checkBounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-indicator {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: white;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="step-info" id="step-info">
+            <h2 id="step-title">1. 🏷️ Name Your Cluster</h2>
+            <p id="step-description">It's like naming your car — you want a name so you can say, "Hey, start my car," rather than "start that vehicle."</p>
+        </div>
+
+        <div class="animation-stage">
+            <!-- Scene 1: Car Naming -->
+            <div class="scene active" id="scene-1">
+                <div class="car" id="car-1">
+                    <div class="car-window"></div>
+                    <div class="car-name">My GKE Cluster</div>
+                </div>
+            </div>
+
+            <!-- Scene 2: Region Selection -->
+            <div class="scene" id="scene-2">
+                <div class="warehouses-container">
+                    <div class="warehouse" id="warehouse-1">
+                        <div class="warehouse-door"></div>
+                        <div class="region-label">US-West</div>
+                    </div>
+                    <div class="warehouse" id="warehouse-2">
+                        <div class="warehouse-door"></div>
+                        <div class="region-label">US-Central</div>
+                    </div>
+                    <div class="warehouse" id="warehouse-3">
+                        <div class="warehouse-door"></div>
+                        <div class="region-label">US-East</div>
+                    </div>
+                </div>
+                <div class="delivery-truck" id="delivery-truck"></div>
+            </div>
+
+            <!-- Scene 3: Cluster Tiers -->
+            <div class="scene" id="scene-3">
+                <div class="car-comparison">
+                    <div class="car-tier">
+                        <div class="car-standard"></div>
+                        <div class="tier-label">Standard</div>
+                    </div>
+                    <div class="car-tier">
+                        <div class="car-enterprise"></div>
+                        <div class="tier-label">Enterprise</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 4: Autopilot -->
+            <div class="scene" id="scene-4">
+                <div class="taxi-scene">
+                    <div class="taxi" id="taxi-1">
+                        <div class="taxi-window"></div>
+                        <div class="autopilot-indicator">🤖 Autopilot Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 5: Networking -->
+            <div class="scene" id="scene-5">
+                <div class="network-scene">
+                    <div class="house house1">
+                        <div class="house-window"></div>
+                    </div>
+                    <div class="house house2">
+                        <div class="house-window"></div>
+                    </div>
+                    <div class="house house3">
+                        <div class="house-window"></div>
+                    </div>
+                    <div class="house house4">
+                        <div class="house-window"></div>
+                    </div>
+                    <div class="road road-h1" id="road-h1"></div>
+                    <div class="road road-v1" id="road-v1"></div>
+                    <div class="road road-v2" id="road-v2"></div>
+                    <div class="road road-h2" id="road-h2"></div>
+                </div>
+            </div>
+
+            <!-- Scene 6: Security -->
+            <div class="scene" id="scene-6">
+                <div class="security-scene">
+                    <div class="house-secure">
+                        <div class="secure-window"></div>
+                        <div class="lock" id="lock-1">🔒</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 7: Monitoring -->
+            <div class="scene" id="scene-7">
+                <div class="monitoring-scene">
+                    <div class="monitor-house">
+                        <div class="camera">📹</div>
+                        <div class="camera-stand"></div>
+                        <div class="thermostat">🌡️</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 8: Fleet Management -->
+            <div class="scene" id="scene-8">
+                <div class="fleet-scene">
+                    <div class="tv-row">
+                        <div class="tv"></div>
+                        <div class="tv"></div>
+                        <div class="tv"></div>
+                    </div>
+                    <div class="remote"></div>
+                    <div class="signal-waves" id="signal-waves">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 9: Review and Create -->
+            <div class="scene" id="scene-9">
+                <div class="review-scene">
+                    <div class="cart">
+                        <div class="cart-handle"></div>
+                        <div class="cart-items" id="cart-items"></div>
+                    </div>
+                    <div class="checkmark" id="checkmark">✅</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-indicator">
+            <div class="progress-dot active" id="dot-1"></div>
+            <div class="progress-dot" id="dot-2"></div>
+            <div class="progress-dot" id="dot-3"></div>
+            <div class="progress-dot" id="dot-4"></div>
+            <div class="progress-dot" id="dot-5"></div>
+            <div class="progress-dot" id="dot-6"></div>
+            <div class="progress-dot" id="dot-7"></div>
+            <div class="progress-dot" id="dot-8"></div>
+            <div class="progress-dot" id="dot-9"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="prevStep()">⬅ Previous</button>
+            <button class="btn" onclick="autoPlay()" id="autoPlayBtn">🎬 Auto Play</button>
+            <button class="btn" onclick="nextStep()">Next ➡</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 9;
+        let autoPlayInterval;
+        let isAutoPlaying = false;
+
+        const stepData = [
+            {
+                title: "1. 🏷️ Name Your Cluster",
+                description: "It's like naming your car — you want a name so you can say, 'Hey, start my car,' rather than 'start that vehicle.'"
+            },
+            {
+                title: "2. 📍 Choose Your Region",
+                description: "Like choosing a warehouse location — if you ship products from far away, delivery takes longer."
+            },
+            {
+                title: "3. 🚗 Select Cluster Tier",
+                description: "Standard = basic model, good for everyday driving. Enterprise = luxury model, with extra safety and comfort features."
+            },
+            {
+                title: "4. 🤖 Nodes (Autopilot Mode)",
+                description: "Like using a taxi service instead of driving yourself. You tell where to go (your app), and the driver (Google) handles everything."
+            },
+            {
+                title: "5. 🛣️ Configure Networking",
+                description: "Like building roads and fences in a neighborhood. You decide who can go where and which roads connect houses."
+            },
+            {
+                title: "6. 🔒 Set Up Security",
+                description: "Like locking your doors and windows to keep your house safe."
+            },
+            {
+                title: "7. 📊 Enable Monitoring",
+                description: "Like having a security camera and thermostat—you monitor your home so you know if something breaks or overheats."
+            },
+            {
+                title: "8. 📡 Fleet Registration",
+                description: "Like having one remote control for multiple TVs instead of juggling many remotes."
+            },
+            {
+                title: "9. ✅ Review and Create",
+                description: "Like reviewing your shopping cart before checkout to make sure you didn't buy the wrong items."
+            }
+        ];
+
+        function updateStepInfo(step) {
+            const stepInfo = stepData[step - 1];
+            document.getElementById('step-title').textContent = stepInfo.title;
+            document.getElementById('step-description').textContent = stepInfo.description;
+        }
+
+        function updateProgressDots(step) {
+            for (let i = 1; i <= totalSteps; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                dot.classList.toggle('active', i === step);
+            }
+        }
+
+        function showStep(stepNumber) {
+            // Hide all scenes
+            document.querySelectorAll('.scene').forEach(scene => {
+                scene.classList.remove('active');
+            });
+
+            // Show current scene
+            document.getElementById(`scene-${stepNumber}`).classList.add('active');
+
+            // Update info and progress
+            updateStepInfo(stepNumber);
+            updateProgressDots(stepNumber);
+
+            // Trigger specific animations with delays
+            setTimeout(() => {
+                switch(stepNumber) {
+                    case 1:
+                        document.getElementById('car-1').classList.add('named');
+                        break;
+                    case 2:
+                        document.getElementById('warehouse-1').classList.add('show');
+                        setTimeout(() => document.getElementById('warehouse-2').classList.add('show'), 400);
+                        setTimeout(() => document.getElementById('warehouse-3').classList.add('show'), 800);
+                        setTimeout(() => document.getElementById('delivery-truck').classList.add('moving'), 1200);
+                        break;
+                    case 4:
+                        document.getElementById('taxi-1').classList.add('autopilot');
+                        break;
+                    case 5:
+                        document.getElementById('road-h1').classList.add('show');
+                        setTimeout(() => document.getElementById('road-v1').classList.add('show'), 300);
+                        setTimeout(() => document.getElementById('road-v2').classList.add('show'), 600);
+                        setTimeout(() => document.getElementById('road-h2').classList.add('show'), 900);
+                        break;
+                    case 6:
+                        document.getElementById('lock-1').classList.add('show');
+                        break;
+                    case 8:
+                        document.getElementById('signal-waves').classList.add('show');
+                        break;
+                    case 9:
+                        document.getElementById('cart-items').classList.add('show');
+                        setTimeout(() => document.getElementById('checkmark').classList.add('show'), 1500);
+                        break;
+                }
+            }, 300);
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                resetAnimations();
+                showStep(currentStep);
+            } else {
+                currentStep = 1;
+                resetAnimations();
+                showStep(currentStep);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                resetAnimations();
+                showStep(currentStep);
+            }
+        }
+
+        function resetAnimations() {
+            // Reset all animations
+            document.getElementById('car-1').classList.remove('named');
+            
+            document.querySelectorAll('.warehouse').forEach(wh => wh.classList.remove('show'));
+            document.getElementById('delivery-truck').classList.remove('moving');
+            
+            document.getElementById('taxi-1').classList.remove('autopilot');
+            
+            document.querySelectorAll('.road').forEach(road => road.classList.remove('show'));
+            
+            document.getElementById('lock-1').classList.remove('show');
+            
+            document.getElementById('signal-waves').classList.remove('show');
+            
+            document.getElementById('cart-items').classList.remove('show');
+            document.getElementById('checkmark').classList.remove('show');
+        }
+
+        function autoPlay() {
+            if (isAutoPlaying) {
+                clearInterval(autoPlayInterval);
+                document.getElementById('autoPlayBtn').textContent = '🎬 Auto Play';
+                isAutoPlaying = false;
+            } else {
+                autoPlayInterval = setInterval(() => {
+                    nextStep();
+                    if (currentStep === 1) {
+                        clearInterval(autoPlayInterval);
+                        document.getElementById('autoPlayBtn').textContent = '🎬 Auto Play';
+                        isAutoPlaying = false;
+                    }
+                }, 4000);
+                document.getElementById('autoPlayBtn').textContent = '⏹️ Stop Auto Play';
+                isAutoPlaying = true;
+            }
+        }
+
+        // Initialize the first step
+        showStep(currentStep);
+    </script>
+</body>
+</html>
